@@ -1,0 +1,170 @@
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+import cv2
+from PIL import Image
+from matplotlib.patches import Rectangle
+import os
+from cv2 import face
+from google.colab.patches import cv2_imshow
+
+data = "drive/MyDrive/yale"
+
+files = os.listdir(data)
+files.pop(0)
+files.pop(-1)
+
+def plotimg(source):
+  pixels = plt.imread(source)
+  rgb_pixels = np.stack((pixels, pixels, pixels), axis=2)
+  print(rgb_pixels.shape)
+  plt.imshow(pixels)
+  plt.show()
+
+for i in files[0:4]:
+  source = f"{data}/{i}"
+  plotimg(source)
+
+def get_image_data():
+    faces = []
+    ids = []
+    for path in files:
+      image = Image.open(f"{data}/{path}").convert('L')
+      image_np = np.array(image, 'uint8')
+      id = int(os.path.split(path)[1].split(".")[0].replace("subject", " "))
+      ids.append(id)
+      faces.append(image_np)
+    return np.array(ids), faces
+
+ids, faces = get_image_data()
+
+lbphc = cv2.face.LBPHFaceRecognizer_create()
+lbphc.train(faces,ids)
+
+lbphc.write('lbphc.yml')
+
+lbph_face_classifier = cv2.face.LBPHFaceRecognizer_create()
+lbph_face_classifier.read("/content/lbphc.yml")
+correct_predictions = 0
+total_test_images = 0
+
+# check the performance of model
+for i in files:
+  test_image = f"{data}/{i}"
+  image = Image.open(test_image).convert('L')
+  image_np = np.array(image,'uint8')
+
+  #Before giving the image to the model lets check it first
+  # cv2_imshow(image_np)
+  predictions = lbph_face_classifier.predict(image_np)
+  cv2.putText(image_np, 'Pred.' +str(predictions[0]),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,255,0))
+
+  expected_output = int(os.path.split(test_image)[1].split('.')[0].replace("subject"," "))
+  cv2.putText(image_np, 'Expec.' +str(expected_output),(10,50),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,255,0))
+  cv2_imshow(image_np)
+  if predictions[0] == expected_output:
+    correct_predictions += 1
+
+
+  total_test_images += 1
+
+accuracy = (correct_predictions / total_test_images) * 100
+print(f"Accuracy: ",accuracy)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+import cv2
+from PIL import Image
+from matplotlib.patches import Rectangle
+import os
+
+# Replace 'drive/MyDrive/yale' with the correct path to your dataset
+data = "drive/MyDrive/yale"
+
+files = os.listdir(data)
+files.pop(0)
+files.pop(-1)
+
+def plotimg(source):
+    pixels = plt.imread(source)
+    rgb_pixels = np.stack((pixels, pixels, pixels), axis=2)
+    print(rgb_pixels.shape)
+    plt.imshow(pixels)
+    plt.show()
+
+for i in files[0:4]:
+    source = f"{data}/{i}"
+    plotimg(source)
+
+def get_image_data():
+    faces = []
+    ids = []
+    for path in files:
+        image = Image.open(f"{data}/{path}").convert('L')
+        image_np = np.array(image, 'uint8')
+        id = int(os.path.split(path)[1].split(".")[0].replace("subject", " "))
+        ids.append(id)
+        faces.append(image_np)
+    return np.array(ids), faces
+
+ids, faces = get_image_data()
+
+lbphc = cv2.face.LBPHFaceRecognizer_create()
+lbphc.train(faces,ids)
+
+lbphc.write('lbphc.yml')
+
+lbph_face_classifier = cv2.face.LBPHFaceRecognizer_create()
+lbph_face_classifier.read("lbphc.yml")  # Use the correct path to the trained model file
+correct_predictions = 0
+total_test_images = 0
+
+# check the performance of model
+for i in files:
+    test_image = f"{data}/{i}"
+    image = Image.open(test_image).convert('L')
+    image_np = np.array(image, 'uint8')
+
+    # Before giving the image to the model, let's check it first
+    plt.imshow(image_np, cmap='gray')
+    plt.show()
+
+    predictions = lbph_face_classifier.predict(image_np)
+    print(f"Predicted: {predictions[0]}, Expected: {int(os.path.split(test_image)[1].split('.')[0].replace('subject', ' '))}")
+    if predictions[0] == int(os.path.split(test_image)[1].split('.')[0].replace('subject', ' ')):
+        correct_predictions += 1
+
+    total_test_images += 1
+
+accuracy = (correct_predictions / total_test_images) * 100
+print(f"Accuracy: {accuracy}%")
